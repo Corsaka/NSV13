@@ -88,6 +88,11 @@ After going through this checklist, you're ready to go!
 	var/max_ftl_range = 80 //light years. 80 means the two targets have to be at least reasonably close together
 	var/spooling_ftl = FALSE
 
+/obj/structure/overmap/fighter/apply_weapons()
+	weapon_types[FIRE_MODE_PDC] = new /datum/ship_weapon/light_cannon(src)
+	weapon_types[FIRE_MODE_MISSILE] = new/datum/ship_weapon/missile_launcher(src)
+	weapon_types[FIRE_MODE_TORPEDO] = new/datum/ship_weapon/torpedo_launcher(src)
+
 /obj/structure/overmap/fighter/Initialize()
 	. = ..()
 	for(var/X in allowed_cargo)
@@ -235,6 +240,7 @@ You need to fire emag the fighter's IFF board. This makes it list as "ENEMY" on 
 	if(prebuilt)
 		prebuilt_setup()
 	dradis = new /obj/machinery/computer/ship/dradis/internal(src) //Fighters need a way to find their way home.
+	dradis.linked = src
 	obj_integrity = max_integrity
 	RegisterSignal(src, COMSIG_MOVABLE_MOVED, .proc/check_overmap_elegibility) //Used to smoothly transition from ship to overmap
 	add_overlay(image(icon = icon, icon_state = "canopy_open", dir = SOUTH))
@@ -290,14 +296,6 @@ You need to fire emag the fighter's IFF board. This makes it list as "ENEMY" on 
 	max_torpedoes = sy?.torpedo_capacity
 	max_cannon = py?.ammo_capacity
 	max_passengers = pc?.passenger_capacity
-
-	//Setup weapon datums and fire modes
-
-	if(max_missiles > 0 && !weapon_types[FIRE_MODE_MISSILE])
-		weapon_types[FIRE_MODE_MISSILE] = new/datum/ship_weapon/missile_launcher(src)
-	if(max_torpedoes > 0 && !weapon_types[FIRE_MODE_TORPEDO])
-		weapon_types[FIRE_MODE_TORPEDO] = new/datum/ship_weapon/torpedo_launcher(src)
-	weapon_types[FIRE_MODE_RAILGUN] = null //Hardcoded for now. Change me if you want railgun fighters or some such fuckery
 	if(py)
 		var/path_one = new py.weapon_type_path_one(src)
 		if(path_one)
@@ -680,6 +678,9 @@ You need to fire emag the fighter's IFF board. This makes it list as "ENEMY" on 
 	if(maint_state == MS_OPEN)
 		ui_interact(user)
 		return TRUE
+	if(maint_state == MS_UNSECURE)
+		to_chat(user, "<span class='warning'>[src]'s maintenance panel is insecure.</span>")
+		return
 	if(!canopy_open)
 		to_chat(user, "<span class='warning'>[src]'s canopy isn't open.</span>")
 		return
@@ -732,13 +733,10 @@ You need to fire emag the fighter's IFF board. This makes it list as "ENEMY" on 
 	if(ispath(has_escape_pod))
 		escape_pod = new /obj/structure/overmap/fighter/escapepod(get_turf(src))
 		escape_pod.name = "[name] - escape pod"
-		new /obj/item/fighter_component/fuel_tank/escapepod(escape_pod)
-		escape_pod.fuel_setup()
+		escape_pod.faction = faction
 		transfer_occupants_to(escape_pod)
 		escape_pod.desired_angle = 0
 		escape_pod.user_thrust_dir = NORTH
-		escape_pod.internal_tank = new /obj/machinery/portable_atmospherics/canister/air(escape_pod)
-		escape_pod.velocity.y = 3
 		escape_pod = null
 		return TRUE
 	else
@@ -755,6 +753,7 @@ You need to fire emag the fighter's IFF board. This makes it list as "ENEMY" on 
 		if(M == last_pilot && !what.pilot) //Let the pilot fly the new ship, unless it already has a pilot.
 			what.start_piloting(M, "pilot")
 			what.mobs_in_ship += M
+			what.attack_hand(M) //Pop up the UI panel.
 			continue
 		what.start_piloting(M, "observer") //So theyre unable to fly the pod
 		what.mobs_in_ship += M
@@ -835,13 +834,13 @@ How to make fuel:
 	if(user != pilot && maint_state == MS_OPEN)
 		ui = SStgui.try_update_ui(user, src, ui_key, ui, force_open)
 		if(!ui)
-			ui = new(user, src, ui_key, "fighter_maintenance", name, 560, 600, master_ui, state)
+			ui = new(user, src, ui_key, "FighterMaintenance", name, 560, 800, master_ui, state)
 			ui.open()
 	ui = SStgui.try_update_ui(user, src, ui_key, ui, force_open)
 	if(!ui)
 		if(maint_state == MS_CLOSED)
 			state = GLOB.contained_state
-			ui = new(user, src, ui_key, "fighter_controls", name, 560, 600, master_ui, state)
+			ui = new(user, src, ui_key, "FighterControls", name, 560, 800, master_ui, state)
 			ui.open()
 
 /obj/structure/overmap/fighter/can_move()
@@ -993,10 +992,45 @@ How to make fuel:
 	if(warmup_cooldown)
 		to_chat(usr, "You need to wait for [src] to finish its last action.</span>")
 		return
+	var/atom/movable/target = locate(params["id"])
 	switch(action)
+		if("examine")
+			if(!target)
+				return
+			to_chat(usr, "<span class='notice'>[target.desc]</span>")
+		if("eject_p")
+			if(!target)
+				return
+			to_chat(usr, "<span class='notice'>You start uninstalling [target.name] from [src].</span>")
+			if(!do_after(usr, 5 SECONDS, target=src))
+				return
+			to_chat(usr, "<span class='notice>You uninstall [target.name] from [src].</span>")
+			if(istype(target, /obj/item/ship_weapon/ammunition/countermeasure_charge))
+				mun_countermeasures -= target
+			target?.forceMove(get_turf(src))
+			update_stats()
+		if("kick")
+			if(!target)
+				return
+			if(!allowed(usr) || usr != pilot)
+				return
+			var/mob/living/L = target
+			to_chat(L, "<span class='warning'>You have been kicked out of [src] by the pilot.</span>")
+			canopy_open = FALSE
+			toggle_canopy()
+			stop_piloting(L)
 		if("ignition")
-			if(flight_state >= NO_FUEL_PUMP)
-				to_chat(usr, "You can't flip the ignition switch without first deactivating the fuel pump.</span>")
+			if(flight_state > NO_FUEL_PUMP)
+				if(!throttle_lock)
+					to_chat(usr, "You cannot shut down [src]'s engines without first engaging the throttle lock.</span>")
+					return
+				to_chat(usr, "You start flipping switches and perfoming a controlled shutdown...</span>")
+				relay('nsv13/sound/effects/fighters/powerswitch.ogg')
+				if(do_after(usr, 5 SECONDS, target=src))
+					flight_state = NO_IGNITION
+					playsound(src, 'nsv13/sound/effects/ship/rcs.ogg', 100, TRUE)
+					visible_message("<span class='warning'>[src]'s engine fizzles out!</span>")
+					stop_relay(CHANNEL_SHIP_ALERT)
 				return
 			to_chat(usr, "You flip the ignition switch.</span>")
 			flight_state = NO_FUEL_PUMP
@@ -1036,17 +1070,6 @@ How to make fuel:
 		if("throttle_lock")
 			to_chat(usr, "You flip the throttle lock switch.</span>")
 			throttle_lock = !throttle_lock
-		if("shutdown")
-			if(!throttle_lock)
-				to_chat(usr, "You cannot shut down [src]'s engines without first engaging the throttle lock.</span>")
-				return
-			to_chat(usr, "You start flipping switches and perfoming a controlled shutdown...</span>")
-			relay('nsv13/sound/effects/fighters/powerswitch.ogg')
-			if(do_after(usr, 5 SECONDS, target=src))
-				flight_state = NO_IGNITION
-				playsound(src, 'nsv13/sound/effects/ship/rcs.ogg', 100, TRUE)
-				visible_message("<span class='warning'>[src]'s engine fizzles out!</span>")
-				stop_relay(CHANNEL_SHIP_ALERT)
 		if("canopy_lock")
 			toggle_canopy()
 		if("eject")
@@ -1078,6 +1101,10 @@ How to make fuel:
 			toggle_brakes()
 			relay('nsv13/sound/effects/fighters/switch.ogg')
 			return //Dodge the cooldown because these actions should be instant
+		if("inertial_dampeners")
+			toggle_inertia()
+			relay('nsv13/sound/effects/fighters/switch.ogg')
+			return //Dodge the cooldown because these actions should be instant
 		if("weapon_safety")
 			toggle_safety()
 			relay('nsv13/sound/effects/fighters/switch.ogg')
@@ -1090,87 +1117,6 @@ How to make fuel:
 			if(!mag_lock)
 				return
 			mag_lock.abort_launch()
-		if("component_fuel_tank")
-			var/atom/movable/part = get_part(/obj/item/fighter_component/fuel_tank)
-			to_chat(usr, "<span class='notice'>You start uninstalling [part.name] from [src].</span>")
-			if(!do_after(usr, 5 SECONDS, target=src))
-				return
-			to_chat(usr, "<span class='notice>You uninstall [part.name] from [src].</span>")
-			part?.forceMove(get_turf(src))
-			update_stats()
-		if("component_avionics")
-			var/atom/movable/part = get_part(/obj/item/fighter_component/avionics)
-			to_chat(usr, "<span class='notice'>You start uninstalling [part.name] from [src].</span>")
-			if(!do_after(usr, 5 SECONDS, target=src))
-				return
-			to_chat(usr, "<span class='notice>You uninstall [part.name] from [src].</span>")
-			part?.forceMove(get_turf(src))
-			update_stats()
-		if("component_apu")
-			var/atom/movable/part = get_part(/obj/item/fighter_component/apu)
-			to_chat(usr, "<span class='notice'>You start uninstalling [part.name] from [src].</span>")
-			if(!do_after(usr, 5 SECONDS, target=src))
-				return
-			to_chat(usr, "<span class='notice>You uninstall [part.name] from [src].</span>")
-			part?.forceMove(get_turf(src))
-			update_stats()
-		if("component_armour_plating")
-			var/atom/movable/part = get_part(/obj/item/fighter_component/armour_plating)
-			to_chat(usr, "<span class='notice'>You start uninstalling [part.name] from [src].</span>")
-			if(!do_after(usr, 5 SECONDS, target=src))
-				return
-			to_chat(usr, "<span class='notice>You uninstall [part.name] from [src].</span>")
-			part?.forceMove(get_turf(src))
-			update_stats()
-		if("component_targeting_sensor")
-			var/atom/movable/part = get_part(/obj/item/fighter_component/targeting_sensor)
-			to_chat(usr, "<span class='notice'>You start uninstalling [part.name] from [src].</span>")
-			if(!do_after(usr, 5 SECONDS, target=src))
-				return
-			to_chat(usr, "<span class='notice>You uninstall [part.name] from [src].</span>")
-			part?.forceMove(get_turf(src))
-			update_stats()
-		if("component_engine")
-			var/atom/movable/part = get_part(/obj/item/fighter_component/engine)
-			to_chat(usr, "<span class='notice'>You start uninstalling [part.name] from [src].</span>")
-			if(!do_after(usr, 5 SECONDS, target=src))
-				return
-			to_chat(usr, "<span class='notice>You uninstall [part.name] from [src].</span>")
-			part?.forceMove(get_turf(src))
-			update_stats()
-		if("component_countermeasure_dispenser")
-			var/atom/movable/part = get_part(/obj/item/fighter_component/countermeasure_dispenser)
-			to_chat(usr, "<span class='notice'>You start uninstalling [part.name] from [src].</span>")
-			if(!do_after(usr, 5 SECONDS, target=src))
-				return
-			to_chat(usr, "<span class='notice>You uninstall [part.name] from [src].</span>")
-			for(var/obj/item/ship_weapon/ammunition/countermeasure_charge/CMC in mun_countermeasures)
-				CMC?.forceMove(get_turf(src))
-				mun_countermeasures -= CMC
-			part?.forceMove(get_turf(src))
-			update_stats()
-		if("component_primary")
-			var/atom/movable/part = get_part(/obj/item/fighter_component/primary)
-			if(mun_cannon.len != 0)
-				to_chat(usr, "<span class='warning'>You must first unload your primary munitions before removing [part.name]")
-				return
-			to_chat(usr, "<span class='notice'>You start uninstalling [part.name] from [src].</span>")
-			if(!do_after(usr, 5 SECONDS, target=src))
-				return
-			to_chat(usr, "<span class='notice>You uninstall [part.name] from [src].</span>")
-			part?.forceMove(get_turf(src))
-			update_stats()
-		if("component_secondary")
-			var/atom/movable/part = get_part(/obj/item/fighter_component/secondary)
-			if(mun_missiles.len != 0 || mun_torps.len != 0)
-				to_chat(usr, "<span class='warning'>You must first unload your secondary munitions before removing [part.name]")
-				return
-			to_chat(usr, "<span class='notice'>You start uninstalling [part.name] from [src].</span>")
-			if(!do_after(usr, 5 SECONDS, target=src))
-				return
-			to_chat(usr, "<span class='notice>You uninstall [part.name] from [src].</span>")
-			part?.forceMove(get_turf(src))
-			update_stats()
 		if("master_caution")
 			set_master_caution(FALSE)
 			return
@@ -1192,13 +1138,14 @@ How to make fuel:
 		if("show_dradis")
 			dradis.attack_hand(usr)
 			return
-		if("unload_cargo")
-			var/atom/movable/F = locate(params["crate_id"])
-			to_chat(usr, "<span class='notice'>You start unloading [F.name] from [src].</span>")
-			if(!do_after(usr, 3 SECONDS, target=src) || !F)
+		if("carg")
+			if(!target)
 				return
-			cargo -= F
-			F.forceMove(get_turf(src))
+			to_chat(usr, "<span class='notice'>You start unloading [target.name] from [src].</span>")
+			if(!do_after(usr, 3 SECONDS, target=src) || !target)
+				return
+			cargo -= target
+			target.forceMove(get_turf(src))
 			return
 	relay('nsv13/sound/effects/fighters/switch.ogg')
 
@@ -1212,6 +1159,7 @@ How to make fuel:
 	data["docking_mode"] = docking_mode
 	data["canopy_lock"] = canopy_open
 	data["brakes"] = brakes
+	data["inertial_dampeners"] = inertial_dampeners
 	data["weapon_safety"] = weapon_safety
 	data["target_lock"] = target_lock != null ? TRUE : FALSE
 	data["max_integrity"] = max_integrity
@@ -1219,6 +1167,7 @@ How to make fuel:
 	data["max_fuel"] = get_max_fuel()
 	data["fuel"] = get_fuel()
 	data["mag_locked"] = (mag_lock != null) ? TRUE : FALSE
+	data["rwr"] = (enemies.len) ? TRUE : FALSE
 	if(flight_state > NO_IGNITION)
 		data["ignition"] = TRUE
 	if(flight_state > NO_FUEL_PUMP)
@@ -1227,15 +1176,28 @@ How to make fuel:
 		data["battery"] = TRUE
 	if(flight_state == APU_SPUN)
 		data["apu"] = TRUE
-	data["c_fuel_tank"] = get_part(/obj/item/fighter_component/fuel_tank)
-	data["c_avionics"] = get_part(/obj/item/fighter_component/avionics)
-	data["c_apu"] = get_part(/obj/item/fighter_component/apu)
-	data["c_armour_plating"] = get_part(/obj/item/fighter_component/armour_plating)
-	data["c_targeting_sensor"] = get_part(/obj/item/fighter_component/targeting_sensor)
-	data["c_engine"] = get_part(/obj/item/fighter_component/engine)
-	data["c_countermeasure_dispenser"] = get_part(/obj/item/fighter_component/countermeasure_dispenser)
-	data["c_primary"] = get_part(/obj/item/fighter_component/primary)
-	data["c_secondary"] = get_part(/obj/item/fighter_component/secondary)
+	//Maintenance UI
+	var/list/hardpoints_info = list()
+	var/list/occupants_info = list()
+	for(var/atom/movable/AM in contents)
+		if(isliving(AM))
+			var/mob/living/L = AM
+			var/list/occupant_info = list()
+			occupant_info["name"] = L.name
+			occupant_info["id"] = "\ref[L]"
+			occupant_info["afk"] = (L.mind) ? "Active" : "Inactive (SSD)"
+			occupants_info[++occupants_info.len] = occupant_info
+			continue
+		if(!istype(AM, /obj/item/fighter_component))
+			continue
+		var/list/hardpoint_info = list()
+		var/obj/item/fighter_component/FC = AM
+		hardpoint_info["name"] = AM.name
+		hardpoint_info["id"] = "\ref[AM]"
+		hardpoint_info["burntout"] = FC.burntout
+		hardpoints_info[++hardpoints_info.len] = hardpoint_info
+	data["hardpoints_info"] = hardpoints_info
+	data["occupants_info"] = occupants_info
 	data["max_countermeasures"] = max_countermeasures
 	data["current_countermeasures"] = mun_countermeasures.len
 	data["master_caution"] = master_caution
@@ -1250,9 +1212,8 @@ How to make fuel:
 		data["max_rbs"] = get_max_rbs()
 		data["rbs_welder"] = get_rbs_welder()
 		data["rbs_foamer"] = get_rbs_foamer()
-	if(max_passengers)
-		data["max_passengers"] = max_passengers
-		data["passengers"] = mobs_in_ship.len
+	data["max_passengers"] = max_passengers
+	data["passengers"] = mobs_in_ship.len
 	data["flight_state"] = flight_state
 	data["loaded_munitions"] = list()
 	var/list/munitions = list()
@@ -1268,21 +1229,21 @@ How to make fuel:
 		munitions[++munitions.len] = torp_info
 	data["loaded_munitions"] = munitions
 	data["has_cargo"] = (cargo.len >= 1)
+	var/list/cargo_info = list()
 	if(cargo.len)
-		var/list/cargo_info = list()
 		for(var/atom/movable/F in cargo)
 			var/list/info = list()
 			info["name"] = F.name
-			var/contentslist = ""
+			var/contentslist = "Contents:"
 			for(var/atom/movable/FF in F.contents)
-				contentslist += "[FF.name]"//lazy variable names go me
+				contentslist += "[FF.name],"//lazy variable names go me
 			info["contents"] = contentslist
 			info["crate_id"] = "\ref[F]"
 			cargo_info[++cargo_info.len] = info
-		data["cargo_info"] = cargo_info
-		data["cargo"] = cargo.len
-		data["max_cargo"] = max_cargo
-		data["can_unload"] = !SSmapping.level_trait(z, ZTRAIT_OVERMAP) //Hmm gee I wonder why.
+	data["cargo"] = cargo.len
+	data["max_cargo"] = max_cargo
+	data["can_unload"] = !SSmapping.level_trait(z, ZTRAIT_OVERMAP) //Hmm gee I wonder why.
+	data["cargo_info"] = cargo_info
 	return data
 
 #undef NO_IGNITION

@@ -137,7 +137,7 @@ GLOBAL_LIST_INIT(computer_beeps, list('nsv13/sound/effects/computer/beep.ogg','n
 /obj/machinery/computer/ship/tactical/ui_interact(mob/user, ui_key = "main", datum/tgui/ui = null, force_open = 0, datum/tgui/master_ui = null, datum/ui_state/state = GLOB.default_state) // Remember to use the appropriate state.
 	ui = SStgui.try_update_ui(user, src, ui_key, ui, force_open)
 	if(!ui)
-		ui = new(user, src, ui_key, "tactical", name, 560, 600, master_ui, state)
+		ui = new(user, src, ui_key, "TacticalConsole", name, 560, 600, master_ui, state)
 		ui.open()
 
 /obj/machinery/computer/ship/tactical/ui_act(action, params, datum/tgui/ui)
@@ -164,6 +164,7 @@ GLOBAL_LIST_INIT(computer_beeps, list('nsv13/sound/effects/computer/beep.ogg','n
 	data["max_hullplates"] = linked.max_armour_plates
 	data["weapons"] = list()
 	data["target_name"] = (linked.target_lock) ? linked.target_lock.name : "none"
+	var/scan_range = (linked?.dradis) ? linked.dradis.sensor_range : 45 //hide targets that are outside of sensor range to avoid cheese.
 	for(var/datum/ship_weapon/SW_type in linked.weapon_types)
 		var/ammo = 0
 		var/max_ammo = 0
@@ -171,12 +172,12 @@ GLOBAL_LIST_INIT(computer_beeps, list('nsv13/sound/effects/computer/beep.ogg','n
 		for(var/obj/machinery/ship_weapon/SW in SW_type.weapons["all"])
 			if(!SW)
 				continue
-			max_ammo += SW.max_ammo
-			ammo += SW.ammo.len
+			max_ammo += SW.get_max_ammo()
+			ammo += SW.get_ammo()
 		data["weapons"] += list(list("name" = thename, "ammo" = ammo, "maxammo" = max_ammo))
 	data["ships"] = list()
 	for(var/obj/structure/overmap/OM in GLOB.overmap_objects)
-		if(OM.z == linked.z && OM.faction != linked.faction)
+		if(OM.z == linked.z && OM.faction != linked.faction && get_dist(linked, OM) <= scan_range && OM.is_sensor_visible(linked) >= SENSOR_VISIBILITY_TARGETABLE)
 			data["ships"] += list(list("name" = OM.name, "integrity" = OM.obj_integrity, "max_integrity" = OM.max_integrity, "faction" = OM.faction))
 	return data
 
@@ -277,6 +278,10 @@ GLOBAL_LIST_INIT(computer_beeps, list('nsv13/sound/effects/computer/beep.ogg','n
 		cancel_salvage()
 	attack_hand(usr)
 
+/obj/effect/ebeam/chain //Blame bee disabling but not removing the guardian shit inside the mob folder
+	name = "lightning chain"
+	layer = LYING_MOB_LAYER
+
 /obj/machinery/computer/ship/salvage/proc/salvage()
 	if(!salvage_target || !can_salvage)
 		salvage_target = null
@@ -324,8 +329,8 @@ GLOBAL_LIST_INIT(computer_beeps, list('nsv13/sound/effects/computer/beep.ogg','n
 	density = FALSE
 	layer = LATTICE_LAYER //under pipes
 	plane = FLOOR_PLANE
-	obj_integrity = 100
-	max_integrity = 100
+	obj_integrity = 200
+	max_integrity = 200
 	var/obj/structure/overmap/parent = null
 	var/armour_scale_modifier = 4
 	var/armour_broken = FALSE
@@ -365,6 +370,58 @@ Method to try locate an overmap object that we should attach to. Recursively cal
 	parent?.armour_plates --
 	. = ..()
 
+/datum/reagent/hull_repair_juice
+	name = "Hull Repair Juice"
+	description = "Repairs hull plating rapidly."
+	reagent_state = LIQUID
+	color = "#CC8899"
+	metabolization_rate = 4
+	taste_description = "metallic hull repair juice"
+	process_flags = ORGANIC | SYNTHETIC
+
+//Hull repair juice -> stabilizing agent, iron, carbon
+
+/obj/effect/particle_effect/foam/hull_repair_juice
+	name = "Hull Repair Foam"
+	slippery_foam = FALSE
+	color = "#CC8899"
+
+/obj/structure/reagent_dispensers/foamtank/hull_repair_juice
+	name = "hull repair juice tank"
+	desc = "A tank full of hull repair foam."
+	icon_state = "foam"
+	reagent_id = /datum/reagent/hull_repair_juice
+	tank_volume = 1500 //I NEED A LOT OF FOAM OK.
+
+/obj/item/extinguisher/advanced/hull_repair_juice
+	name = "hull damage extinguisher"
+	desc = "For when the hull plates just won't STOP."
+	icon = 'nsv13/icons/obj/inflatable.dmi'
+	chem = /datum/reagent/hull_repair_juice
+	tanktype = /obj/structure/reagent_dispensers/foamtank/hull_repair_juice
+
+/datum/chemical_reaction/hull_repair_juice
+	name = "Hull Repair Juice"
+	id = /datum/reagent/hull_repair_juice
+	results = list(/datum/reagent/hull_repair_juice = 10)
+	required_reagents = list(/datum/reagent/stabilizing_agent = 1, /datum/reagent/iron = 1,/datum/reagent/carbon = 1)
+
+/datum/reagent/hull_repair_juice/reaction_turf(turf/open/T, reac_volume)
+	if (!istype(T))
+		return
+
+	if(reac_volume >= 1)
+		var/obj/effect/particle_effect/foam/F = (locate(/obj/effect/particle_effect/foam) in T)
+		if(!F)
+			F = new(T)
+		else if(istype(F))
+			F.lifetime = initial(F.lifetime) //reduce object churn a little bit when using smoke by keeping existing foam alive a bit longer
+
+	for(var/obj/structure/hull_plate/HP in T.contents)
+		if(!istype(HP))
+			continue
+		HP.try_repair(HP.max_integrity)
+
 /obj/structure/hull_plate/proc/relay_damage(datum/source, amount)
 	if(!amount)
 		return //No 0 damage
@@ -388,7 +445,8 @@ Method to try locate an overmap object that we should attach to. Recursively cal
 	obj_integrity = (obj_integrity + amount < max_integrity) ? obj_integrity + amount : max_integrity
 	update_icon()
 	if(obj_integrity <= max_integrity)
-		to_chat(user, "<span class='warning'>You have fully repaired [src].</span>")
+		if(user)
+			to_chat(user, "<span class='warning'>You have fully repaired [src].</span>")
 		obj_integrity = max_integrity
 		update_icon()
 		if(armour_broken)
@@ -446,7 +504,7 @@ Method to try locate an overmap object that we should attach to. Recursively cal
 
 /obj/structure/overmap/proc/get_repair_efficiency()
 	if(max_armour_plates <= 0)
-		return 25 //Very slow heal for AIs
+		return 10 //Very slow heal for AIs, considering they can stop off at a supply post to heal back up.
 	return (max_armour_plates > 0) ? 100*(armour_plates/max_armour_plates) : 100
 
 #undef MAX_FLAK_RANGE

@@ -13,6 +13,7 @@
 		if(gunner)
 			to_chat(gunner, "<span class='warning'>Weapon safety interlocks are active! Use the ship verbs tab to disable them!</span>")
 		return
+	handle_cloak(CLOAK_TEMPORARY_LOSS)
 	last_target = target
 	if(next_firetime > world.time)
 		to_chat(pilot, "<span class='warning'>WARNING: Weapons cooldown in effect to prevent overheat.</span>")
@@ -46,7 +47,7 @@
 /obj/structure/overmap/proc/get_max_firemode()
 	if(mass < MASS_MEDIUM) //Small craft dont get a railgun
 		return FIRE_MODE_TORPEDO
-	return FIRE_MODE_RAILGUN
+	return FIRE_MODE_MAC
 
 /obj/structure/overmap/proc/swap_to(what=FIRE_MODE_PDC)
 	if(!weapon_types[what])
@@ -68,7 +69,7 @@
 		if(torpedoes <= 0)
 			return FALSE
 		torpedoes --
-		fire_projectile(/obj/item/projectile/guided_munition/torpedo, target, homing = TRUE, speed=3, explosive = TRUE)
+		fire_projectile(torpedo_type, target, homing = TRUE, speed=3, explosive = TRUE)
 		var/obj/structure/overmap/OM = target
 		if(istype(OM, /obj/structure/overmap) && OM.dradis)
 			OM.dradis?.relay_sound('nsv13/sound/effects/fighters/launchwarning.ogg')

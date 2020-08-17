@@ -44,7 +44,7 @@
 /obj/vehicle/sealed/car/realistic/fighter_tug/ui_interact(mob/user, ui_key = "main", datum/tgui/ui = null, force_open = 0, datum/tgui/master_ui = null, datum/ui_state/state = GLOB.contained_state) // Remember to use the appropriate state.
   ui = SStgui.try_update_ui(user, src, ui_key, ui, force_open)
   if(!ui)
-    ui = new(user, src, ui_key, "fighter_tug", name, 400, 400, master_ui, state)
+    ui = new(user, src, ui_key, "FighterTug", name, 400, 400, master_ui, state)
     ui.open()
 
 /obj/vehicle/sealed/car/realistic/fighter_tug/ui_data(mob/user)
@@ -58,6 +58,8 @@
 /obj/vehicle/sealed/car/realistic/fighter_tug/ui_act(action, params, datum/tgui/ui)
 	if(..())
 		return
+	if(!isliving(usr))
+		return FALSE
 	var/list/drivers = return_drivers()
 	if(!LAZYFIND(drivers, ui.user))
 		to_chat(ui.user, "<span class='warning'>You can't reach the controls from back here...</span>")
@@ -96,7 +98,7 @@
 	if(!target || LAZYFIND(loaded, target) || target.mag_lock)//No sucking
 		return FALSE
 	loaded += target
-	STOP_PROCESSING(SSovermap, target)
+	STOP_PROCESSING(SSphysics_processing, target)
 	target.forceMove(src)
 	vis_contents += target
 	playsound(src, 'nsv13/sound/effects/ship/freespace2/crane_1.wav', 100, FALSE)
@@ -184,7 +186,7 @@
 		if(FL)
 			targetLoc = get_turf(FL)
 		target.forceMove(targetLoc)
-		START_PROCESSING(SSovermap, target)
+		START_PROCESSING(SSphysics_processing, target)
 
 /obj/item/key/fighter_tug
 	name = "fighter tug key"

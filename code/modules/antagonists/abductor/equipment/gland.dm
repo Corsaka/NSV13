@@ -133,7 +133,12 @@
 /obj/item/organ/heart/gland/slime/Insert(mob/living/carbon/M, special = 0)
 	..()
 	owner.faction |= "slime"
-	owner.grant_language(/datum/language/slime)
+	owner.grant_language(/datum/language/slime, TRUE, TRUE, LANGUAGE_GLAND)
+
+/obj/item/organ/heart/gland/slime/Remove(mob/living/carbon/M, special = 0)
+	..()
+	owner.faction -= "slime"
+	owner.remove_language(/datum/language/slime, TRUE, TRUE, LANGUAGE_GLAND)
 
 /obj/item/organ/heart/gland/slime/activate()
 	to_chat(owner, "<span class='warning'>You feel nauseated!</span>")
@@ -166,7 +171,7 @@
 			if(2)
 				to_chat(H, "<span class='warning'>You hear an annoying buzz in your head.</span>")
 				H.confused += 15
-				H.adjustBrainLoss(10, 160)
+				H.adjustOrganLoss(ORGAN_SLOT_BRAIN, 10, 160)
 			if(3)
 				H.hallucination += 60
 
