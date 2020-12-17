@@ -95,20 +95,14 @@ GLOBAL_VAR_INIT(normal_ooc_colour, "#002eb8")
 
 /proc/toggle_ooc(toggle = null)
 	if(toggle != null) //if we're specifically en/disabling ooc
-		if(toggle != GLOB.ooc_allowed)
-			GLOB.ooc_allowed = toggle
-		else
-			return
+		GLOB.ooc_allowed = toggle //set to the new value (or the same value) //this is more efficient than an if/else and looks nicer, fuck you
 	else //otherwise just toggle it
 		GLOB.ooc_allowed = !GLOB.ooc_allowed
 	to_chat(world, "<B>The OOC channel has been globally [GLOB.ooc_allowed ? "enabled" : "disabled"].</B>")
 
 /proc/toggle_dooc(toggle = null)
 	if(toggle != null)
-		if(toggle != GLOB.dooc_allowed)
-			GLOB.dooc_allowed = toggle
-		else
-			return
+		GLOB.dooc_allowed = toggle
 	else
 		GLOB.dooc_allowed = !GLOB.dooc_allowed
 
