@@ -3,59 +3,59 @@
 */
 
 /obj/machinery/door/airlock/command
-	icon = 'icons/obj/doors/airlocks/station/command.dmi'
+	icon = 'nsv13/icons/obj/machinery/doors/command.dmi' //nsv13
 	assemblytype = /obj/structure/door_assembly/door_assembly_com
 	normal_integrity = 450
 
 /obj/machinery/door/airlock/security
-	icon = 'icons/obj/doors/airlocks/station/security.dmi'
+	icon = 'nsv13/icons/obj/machinery/doors/security.dmi' //nsv13
 	assemblytype = /obj/structure/door_assembly/door_assembly_sec
 	normal_integrity = 450
 
 /obj/machinery/door/airlock/engineering
-	icon = 'icons/obj/doors/airlocks/station/engineering.dmi'
+	icon = 'nsv13/icons/obj/machinery/doors/engineering.dmi' //nsv13
 	assemblytype = /obj/structure/door_assembly/door_assembly_eng
 
 /obj/machinery/door/airlock/medical
-	icon = 'icons/obj/doors/airlocks/station/medical.dmi'
+	icon = 'nsv13/icons/obj/machinery/doors/medical.dmi' //nsv13
 	assemblytype = /obj/structure/door_assembly/door_assembly_med
 
 /obj/machinery/door/airlock/maintenance
 	name = "maintenance access"
-	icon = 'icons/obj/doors/airlocks/station/maintenance.dmi'
+	icon = 'nsv13/icons/obj/machinery/doors/maintenance.dmi' //nsv13
 	assemblytype = /obj/structure/door_assembly/door_assembly_mai
 	normal_integrity = 250
 
 /obj/machinery/door/airlock/maintenance/external
 	name = "external airlock access"
-	icon = 'icons/obj/doors/airlocks/station/maintenanceexternal.dmi'
+	icon = 'nsv13/icons/obj/machinery/doors/maintenanceexternal.dmi' //nsv13
 	assemblytype = /obj/structure/door_assembly/door_assembly_extmai
 
 /obj/machinery/door/airlock/mining
 	name = "mining airlock"
-	icon = 'icons/obj/doors/airlocks/station/mining.dmi'
+	icon = 'nsv13/icons/obj/machinery/doors/mining.dmi' //nsv13
 	assemblytype = /obj/structure/door_assembly/door_assembly_min
 
 /obj/machinery/door/airlock/atmos
 	name = "atmospherics airlock"
-	icon = 'icons/obj/doors/airlocks/station/atmos.dmi'
+	icon = 'nsv13/icons/obj/machinery/doors/atmos.dmi' //nsv13
 	assemblytype = /obj/structure/door_assembly/door_assembly_atmo
 
 /obj/machinery/door/airlock/research
-	icon = 'icons/obj/doors/airlocks/station/research.dmi'
+	icon = 'nsv13/icons/obj/machinery/doors/research.dmi' //nsv13
 	assemblytype = /obj/structure/door_assembly/door_assembly_research
 
 /obj/machinery/door/airlock/freezer
 	name = "freezer airlock"
-	icon = 'icons/obj/doors/airlocks/station/freezer.dmi'
+	icon = 'nsv13/icons/obj/machinery/doors/freezer.dmi' //nsv13
 	assemblytype = /obj/structure/door_assembly/door_assembly_fre
 
 /obj/machinery/door/airlock/science
-	icon = 'icons/obj/doors/airlocks/station/science.dmi'
+	icon = 'nsv13/icons/obj/machinery/doors/science.dmi' //nsv13
 	assemblytype = /obj/structure/door_assembly/door_assembly_science
 
 /obj/machinery/door/airlock/virology
-	icon = 'icons/obj/doors/airlocks/station/virology.dmi'
+	icon = 'nsv13/icons/obj/machinery/doors/virology.dmi' //nsv13
 	assemblytype = /obj/structure/door_assembly/door_assembly_viro
 
 //////////////////////////////////
@@ -286,8 +286,8 @@
 /obj/machinery/door/airlock/titanium
 	name = "shuttle airlock"
 	assemblytype = /obj/structure/door_assembly/door_assembly_titanium
-	icon = 'icons/obj/doors/airlocks/shuttle/shuttle.dmi'
-	overlays_file = 'icons/obj/doors/airlocks/shuttle/overlays.dmi'
+	icon = 'nsv13/icons/obj/machinery/doors/shuttle/shuttle.dmi' //nsv13
+	overlays_file = 'nsv13/icons/obj/machinery/doors/shuttle/overlays.dmi' //nsv13
 	normal_integrity = 400
 
 /obj/machinery/door/airlock/titanium/glass
@@ -301,8 +301,8 @@
 */
 
 /obj/machinery/door/airlock/public
-	icon = 'icons/obj/doors/airlocks/station2/glass.dmi'
-	overlays_file = 'icons/obj/doors/airlocks/station2/overlays.dmi'
+	icon = 'nsv13/icons/obj/machinery/doors/glass.dmi' //nsv13
+	overlays_file = 'nsv13/icons/obj/machinery/doors/overlays.dmi' //nsv13
 	assemblytype = /obj/structure/door_assembly/door_assembly_public
 
 /obj/machinery/door/airlock/public/glass
@@ -330,9 +330,9 @@
 
 /obj/machinery/door/airlock/external
 	name = "external airlock"
-	icon = 'icons/obj/doors/airlocks/external/external.dmi'
-	overlays_file = 'icons/obj/doors/airlocks/external/overlays.dmi'
-	note_overlay_file = 'icons/obj/doors/airlocks/external/overlays.dmi'
+	icon = 'nsv13/icons/obj/machinery/doors/external.dmi' //nsv13
+	overlays_file = 'nsv13/icons/obj/machinery/doors/overlays.dmi' //nsv13
+	note_overlay_file = 'nsv13/icons/obj/machinery/doors/overlays.dmi' //nsv13
 	assemblytype = /obj/structure/door_assembly/door_assembly_ext
 
 /obj/machinery/door/airlock/arrivals_external

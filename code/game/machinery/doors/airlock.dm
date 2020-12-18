@@ -92,7 +92,7 @@
 	var/shuttledocked = 0
 	var/delayed_close_requested = FALSE // TRUE means the door will automatically close the next time it's opened.
 
-	var/prying_so_hard = FALSE
+	var/prying_so_hard = FALSE //i pried so hard, and got so far
 	var/protected_door = FALSE // Protects the door against any form of power outage, AI control, screwdrivers and welders.
 	var/door_animation_speed = 4 //nsv13 if you want a door that snaps open QUICKLY like on turbolifts
 
@@ -607,22 +607,22 @@
 /obj/machinery/door/airlock/proc/check_unres() //unrestricted sides. This overlay indicates which directions the player can access even without an ID
 	if(hasPower() && unres_sides)
 		if(unres_sides & NORTH)
-			var/image/I = image(icon='icons/obj/doors/airlocks/station/overlays.dmi', icon_state="unres_n")
+			var/image/I = image(icon='nsv13/icons/obj/machinery/doors/overlays.dmi', icon_state="unres_n") //nsv13
 			I.pixel_y = 32
 			set_light(l_range = 2, l_power = 1)
 			add_overlay(I)
 		if(unres_sides & SOUTH)
-			var/image/I = image(icon='icons/obj/doors/airlocks/station/overlays.dmi', icon_state="unres_s")
+			var/image/I = image(icon='nsv13/icons/obj/machinery/doors/overlays.dmi', icon_state="unres_s") //nsv13
 			I.pixel_y = -32
 			set_light(l_range = 2, l_power = 1)
 			add_overlay(I)
 		if(unres_sides & EAST)
-			var/image/I = image(icon='icons/obj/doors/airlocks/station/overlays.dmi', icon_state="unres_e")
+			var/image/I = image(icon='nsv13/icons/obj/machinery/doors/overlays.dmi', icon_state="unres_e") //nsv13
 			I.pixel_x = 32
 			set_light(l_range = 2, l_power = 1)
 			add_overlay(I)
 		if(unres_sides & WEST)
-			var/image/I = image(icon='icons/obj/doors/airlocks/station/overlays.dmi', icon_state="unres_w")
+			var/image/I = image(icon='nsv13/icons/obj/machinery/doors/overlays.dmi', icon_state="unres_w") //nsv13
 			I.pixel_x = -32
 			set_light(l_range = 2, l_power = 1)
 			add_overlay(I)
@@ -1222,64 +1222,64 @@
 		return
 	switch(paintjob)
 		if("Standard")
-			icon = 'icons/obj/doors/airlocks/station/public.dmi'
-			overlays_file = 'icons/obj/doors/airlocks/station/overlays.dmi'
+			icon = 'nsv13/icons/obj/machinery/doors/public.dmi' //nsv13
+			overlays_file = 'nsv13/icons/obj/machinery/doors/overlays.dmi' //nsv13
 			assemblytype = /obj/structure/door_assembly
 		if("Public")
-			icon = 'icons/obj/doors/airlocks/station2/glass.dmi'
-			overlays_file = 'icons/obj/doors/airlocks/station2/overlays.dmi'
+			icon = 'nsv13/icons/obj/machinery/doors/corridorglass.dmi' //nsv13
+			overlays_file = 'nsv13/icons/obj/machinery/doors/overlays.dmi' //nsv13
 			assemblytype = /obj/structure/door_assembly/door_assembly_public
 		if("Engineering")
-			icon = 'icons/obj/doors/airlocks/station/engineering.dmi'
-			overlays_file = 'icons/obj/doors/airlocks/station/overlays.dmi'
+			icon = 'nsv13/icons/obj/machinery/doors/engineering.dmi' //nsv13
+			overlays_file = 'nsv13/icons/obj/machinery/doors/overlays.dmi' //nsv13
 			assemblytype = /obj/structure/door_assembly/door_assembly_eng
 		if("Atmospherics")
-			icon = 'icons/obj/doors/airlocks/station/atmos.dmi'
-			overlays_file = 'icons/obj/doors/airlocks/station/overlays.dmi'
+			icon = 'nsv13/icons/obj/machinery/doors/atmos.dmi' //nsv13
+			overlays_file = 'nsv13/icons/obj/machinery/doors/overlays.dmi' //nsv13
 			assemblytype = /obj/structure/door_assembly/door_assembly_atmo
 		if("Security")
-			icon = 'icons/obj/doors/airlocks/station/security.dmi'
-			overlays_file = 'icons/obj/doors/airlocks/station/overlays.dmi'
+			icon = 'nsv13/icons/obj/machinery/doors/security.dmi' //nsv13
+			overlays_file = 'nsv13/icons/obj/machinery/doors/overlays.dmi' //nsv13
 			assemblytype = /obj/structure/door_assembly/door_assembly_sec
 		if("Command")
-			icon = 'icons/obj/doors/airlocks/station/command.dmi'
-			overlays_file = 'icons/obj/doors/airlocks/station/overlays.dmi'
+			icon = 'nsv13/icons/obj/machinery/doors/command.dmi' //nsv13
+			overlays_file = 'nsv13/icons/obj/machinery/doors/overlays.dmi' //nsv13
 			assemblytype = /obj/structure/door_assembly/door_assembly_com
 		if("Medical")
-			icon = 'icons/obj/doors/airlocks/station/medical.dmi'
-			overlays_file = 'icons/obj/doors/airlocks/station/overlays.dmi'
+			icon = 'nsv13/icons/obj/machinery/doors/medical.dmi' //nsv13
+			overlays_file = 'nsv13/icons/obj/machinery/doors/overlays.dmi' //nsv13
 			assemblytype = /obj/structure/door_assembly/door_assembly_med
 		if("Research")
-			icon = 'icons/obj/doors/airlocks/station/research.dmi'
-			overlays_file = 'icons/obj/doors/airlocks/station/overlays.dmi'
+			icon = 'nsv13/icons/obj/machinery/doors/research.dmi' //nsv13
+			overlays_file = 'nsv13/icons/obj/machinery/doors/overlays.dmi' //nsv13
 			assemblytype = /obj/structure/door_assembly/door_assembly_research
 		if("Freezer")
-			icon = 'icons/obj/doors/airlocks/station/freezer.dmi'
-			overlays_file = 'icons/obj/doors/airlocks/station/overlays.dmi'
+			icon = 'nsv13/icons/obj/machinery/doors/freezer.dmi' //nsv13
+			overlays_file = 'nsv13/icons/obj/machinery/doors/overlays.dmi' //nsv13
 			assemblytype = /obj/structure/door_assembly/door_assembly_fre
 		if("Science")
-			icon = 'icons/obj/doors/airlocks/station/science.dmi'
-			overlays_file = 'icons/obj/doors/airlocks/station/overlays.dmi'
+			icon = 'nsv13/icons/obj/machinery/doors/science.dmi' //nsv13
+			overlays_file = 'nsv13/icons/obj/machinery/doors/overlays.dmi' //nsv13
 			assemblytype = /obj/structure/door_assembly/door_assembly_science
 		if("Virology")
-			icon = 'icons/obj/doors/airlocks/station/virology.dmi'
-			overlays_file = 'icons/obj/doors/airlocks/station/overlays.dmi'
+			icon = 'nsv13/icons/obj/machinery/doors/virology.dmi' //nsv13
+			overlays_file = 'nsv13/icons/obj/machinery/doors/overlays.dmi' //nsv13
 			assemblytype = /obj/structure/door_assembly/door_assembly_viro
 		if("Mining")
-			icon = 'icons/obj/doors/airlocks/station/mining.dmi'
-			overlays_file = 'icons/obj/doors/airlocks/station/overlays.dmi'
+			icon = 'nsv13/icons/obj/machinery/doors/mining.dmi' //nsv13
+			overlays_file = 'nsv13/icons/obj/machinery/doors/overlays.dmi' //nsv13
 			assemblytype = /obj/structure/door_assembly/door_assembly_min
 		if("Maintenance")
-			icon = 'icons/obj/doors/airlocks/station/maintenance.dmi'
-			overlays_file = 'icons/obj/doors/airlocks/station/overlays.dmi'
+			icon = 'nsv13/icons/obj/machinery/doors/maintenance.dmi' //nsv13
+			overlays_file = 'nsv13/icons/obj/machinery/doors/overlays.dmi' //nsv13
 			assemblytype = /obj/structure/door_assembly/door_assembly_mai
 		if("External")
-			icon = 'icons/obj/doors/airlocks/external/external.dmi'
-			overlays_file = 'icons/obj/doors/airlocks/external/overlays.dmi'
+			icon = 'nsv13/icons/obj/machinery/doors/external.dmi' //nsv13
+			overlays_file = 'nsv13/icons/obj/machinery/doors/overlays.dmi' //nsv13
 			assemblytype = /obj/structure/door_assembly/door_assembly_ext
 		if("External Maintenance")
-			icon = 'icons/obj/doors/airlocks/station/maintenanceexternal.dmi'
-			overlays_file = 'icons/obj/doors/airlocks/station/overlays.dmi'
+			icon = 'nsv13/icons/obj/machinery/doors/maintenanceexternal.dmi' //nsv13
+			overlays_file = 'nsv13/icons/obj/machinery/doors/overlays.dmi' //nsv13
 			assemblytype = /obj/structure/door_assembly/door_assembly_extmai
 		if("Ship") //nsv13 Ship Stuff
 			icon = 'nsv13/icons/obj/machinery/doors/standard.dmi'
